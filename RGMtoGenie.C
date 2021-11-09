@@ -1,9 +1,6 @@
-//Unified version of missing particle analyses, consider e p -> e' p pi+ pi
-//and in turn look at missing proton, pi+ and  pi- events
-//run once to look at all three cases, rather than bespoke codes
-
-
-// ECAL cuts remove last 2 counters for FTOF1A and FTOF1B
+//Look at hipo file and calculate variables from scattered electron
+//Output to GENIE format tree
+//No hadrons yet
 
 
 //#include "DC_Fiducial_Cuts_CLAS12.cxx"
