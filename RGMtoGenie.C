@@ -60,7 +60,12 @@ void RGMtoGenie(TString inFileName){
 
   auto db=TDatabasePDG::Instance();
 
-  double en_beam = 10.6;
+  double en_beam = 10.6;  //nominal RGA value, RGM will run at 1, 2, 4 and 6 GeV
+  //en_beam["1161"]=1.161;
+  //en_beam["2261"]=2.261;
+  //en_beam["4461"]=4.461;
+  //en_beam["6661"]=6.661;
+  //try and figure out how to read these in from epics variables
 
   TLorentzVector beam(0,0,en_beam,en_beam); // beam Px,Py,Pz,E  //CURRENTLY SET TO RGA NOMINAL VALUES
   TLorentzVector target(0,0,0,db->GetParticle(2212)->Mass()); // target Px,Py,Pz,E
@@ -70,33 +75,40 @@ void RGMtoGenie(TString inFileName){
   TLorentzVector pim(0,0,0,db->GetParticle(-211)->Mass()); // pi^- Px,Py,Pz,E
   //pi0's, kaons, etc?
 
-  Int_t negative, positive, nonelectron, nonproton, nonpion;
-
-
+  std::vector<TLorentzVector> loc_proton_v4;
+  //std::vector<TLorentzVector> loc_pion_v4;
+  std::vector<TLorentzVector> loc_pipl_v4;
+  std::vector<TLorentzVector> loc_pimi_v4;
+  
+  
+  
+  Int_t negative, positive, nonelectron, nonproton, nonpion, npip, npim, nprot;
+  
+  
   // Retrieving list of files
   auto files=fake.GetListOfFiles();
   // Gets total events in all files for run dependence binning
   Int_t Bins = files->GetEntries();
   // Output file location and name
-
-
+  
+  
   TString outFileName( inFileName(0,inFileName.Length()-5) + "_genie_filtered.root"); //trim '.hipo' and add '.root' for output file name
-
-
-
+  
+  
+  
   TFile fileOutput1(outFileName,"recreate");
-
-
-
+  
+  
+  
   int TargetPdgCode, TargetZ, TargetA;
   
-//   if (ftarget=="3He") { TargetPdgCode = 1000020030; TargetZ = 2; TargetA = 3; }
-//   if (ftarget=="4He") { TargetPdgCode = 1000020040; TargetZ = 2; TargetA = 4; }
-//   if (ftarget=="C12") { TargetPdgCode = 1000060120; TargetZ = 6; TargetA = 12; }
-//   if (ftarget=="56Fe") { TargetPdgCode = 1000260560; TargetZ = 26; TargetA = 56; }
+  //   if (ftarget=="3He") { TargetPdgCode = 1000020030; TargetZ = 2; TargetA = 3; }
+  //   if (ftarget=="4He") { TargetPdgCode = 1000020040; TargetZ = 2; TargetA = 4; }
+  //   if (ftarget=="C12") { TargetPdgCode = 1000060120; TargetZ = 6; TargetA = 12; }
+  //   if (ftarget=="56Fe") { TargetPdgCode = 1000260560; TargetZ = 26; TargetA = 56; }
   
   //setup and declaration of genie tree
-TTree* mytree;
+  TTree* mytree;
   
   Int_t           genie_iev;
   Int_t           genie_neu;
@@ -172,34 +184,21 @@ TTree* mytree;
   Int_t           genie_niother;
   Int_t           genie_ni;
   int             InitialStateParticles = 2;
-//   Int_t           genie_pdgi[InitialStateParticles];   //[ni]
-//   Int_t           genie_resc[InitialStateParticles];   //[ni]
-//   Double_t        genie_Ei[InitialStateParticles];   //[ni]
-//   Double_t        genie_pxi[InitialStateParticles];   //[ni]
-//   Double_t        genie_pyi[InitialStateParticles];   //[ni]
-//   Double_t        genie_pzi[InitialStateParticles];   //[ni]
-  Int_t           genie_pdgi[2];   //[ni]
-  Int_t           genie_resc[2];   //[ni]
-  Double_t        genie_Ei[2];   //[ni]
-  Double_t        genie_pxi[2];   //[ni]
-  Double_t        genie_pyi[2];   //[ni]
-  Double_t        genie_pzi[2];   //[ni]
+  Int_t           genie_pdgi[InitialStateParticles];   //[ni]
+  Int_t           genie_resc[InitialStateParticles];   //[ni]
+  Double_t        genie_Ei[InitialStateParticles];   //[ni]
+  Double_t        genie_pxi[InitialStateParticles];   //[ni]
+  Double_t        genie_pyi[InitialStateParticles];   //[ni]
+  Double_t        genie_pzi[InitialStateParticles];   //[ni]
   Int_t           genie_nf;
   const int FinalStateParticles = 120;
-//   Int_t           genie_pdgf[FinalStateParticles];   //[nf]
-//   Double_t        genie_Ef[FinalStateParticles];   //[nf]
-//   Double_t        genie_pxf[FinalStateParticles];   //[nf]
-//   Double_t        genie_pyf[FinalStateParticles];   //[nf]
-//   Double_t        genie_pzf[FinalStateParticles];   //[nf]
-//   Double_t        genie_pf[FinalStateParticles];   //[nf]
-//   Double_t        genie_cthf[FinalStateParticles];   //[nf]
-  Int_t           genie_pdgf[120];   //[nf]
-  Double_t        genie_Ef[120];   //[nf]
-  Double_t        genie_pxf[120];   //[nf]
-  Double_t        genie_pyf[120];   //[nf]
-  Double_t        genie_pzf[120];   //[nf]
-  Double_t        genie_pf[120];   //[nf]
-  Double_t        genie_cthf[120];   //[nf]
+  Int_t           genie_pdgf[FinalStateParticles];   //[nf]
+  Double_t        genie_Ef[FinalStateParticles];   //[nf]
+  Double_t        genie_pxf[FinalStateParticles];   //[nf]
+  Double_t        genie_pyf[FinalStateParticles];   //[nf]
+  Double_t        genie_pzf[FinalStateParticles];   //[nf]
+  Double_t        genie_pf[FinalStateParticles];   //[nf]
+  Double_t        genie_cthf[FinalStateParticles];   //[nf]
   Double_t        genie_vtxx;
   Double_t        genie_vtxy;
   Double_t        genie_vtxz;
@@ -210,7 +209,7 @@ TTree* mytree;
 
 
 
- mytree = new TTree("gst","gst");  
+  mytree = new TTree("gst","gst");  
   
   mytree->Branch("iev", &genie_iev, "iev/I");
   mytree->Branch("neu", &genie_neu, "neu/I");
@@ -307,111 +306,111 @@ TTree* mytree;
   mytree->Branch("sumKEf", &genie_sumKEf, "sumKEf/D");
   mytree->Branch("calresp0", &genie_calresp0, "calresp0/D");
   
-  
+  int shift = 60;
   
 
 
   // Looping over data
-
+  
   //Loop over files
   for(Int_t i=0;i<files->GetEntries();i++){
-
+    
     //create the event reader
     clas12reader c12(files->At(i)->GetTitle());
-
+    
     //Binno++; // Count the number of files, therefore the number of x bins
-
-    c12.setEntries(1E3);
+    
+    c12.setEntries(1E5);
     while(c12.next()==true){
-
-
-  genie_neu = 11;
-  genie_fspl = 11;
-  genie_tgt = TargetPdgCode;
-  genie_Z = TargetZ;
-  genie_A = TargetA;
-  genie_hitnuc = -99.;
-  genie_hitqrk = -99.;
-  genie_resid = -99.;
-  genie_sea = false;
-  genie_qel = false;
-  genie_mec = false;
-  genie_res = false;
-  genie_dis = false;
-  genie_coh = false;
-  genie_dfr = false;
-  genie_imd = false;
-  genie_imdanh = false;
-  genie_singlek = false;
-  genie_nuel = false;
-  genie_em = true;
-  genie_CC = false;
-  genie_nc = false;
-  genie_charm = false;
-  genie_neut_code = -99;
-  genie_nuance_code = -99;
-  genie_wght = 1.;
-  genie_xs = -99;
-  genie_ys = -99;
-  genie_ts = -99;
-  genie_Q2s = -99;
-  genie_Ws = -99;
-  genie_Ev = en_beam;
-  genie_EvRF = -99.;
-  genie_pxv = 0.;
-  genie_pyv = 0.;
-  genie_pzv = sqrt(en_beam * en_beam - e_mass*e_mass); 
-  genie_En = -99.;
-  genie_pxn = -99.;
-  genie_pyn = -99.;
-  genie_pzn = -99.;
-  genie_nfkp = -99;
-  genie_nfkm = -99;
-  genie_nfk0 = -99;
-  genie_nfem = -99;
-  genie_nfother = -99;
-  genie_nip = -99;
-  genie_nin = -99;
-  genie_nipip = -99;
-  genie_nipim = -99;
-  genie_nipi0 = -99;
-  genie_nikp = -99;
-  genie_nikm = -99;
-  genie_nik0 = -99;
-  genie_niem = -99;
-  genie_niother = -99;
-  genie_ni = -99;
-  genie_calresp0 = -99;
-  genie_y = -99.;
-  genie_t = -99;
-  
-  int NEventsTotal = 0;
-  
-  for (int WhichInitialStateParticle = 0; WhichInitialStateParticle < InitialStateParticles; WhichInitialStateParticle ++) {
-    
-    genie_pdgi[WhichInitialStateParticle] = -99;
-    genie_resc[WhichInitialStateParticle] = -99;
-    genie_Ei[WhichInitialStateParticle] = -99.;
-    genie_pxi[WhichInitialStateParticle] = -99.;
-    genie_pyi[WhichInitialStateParticle] = -99.;
-    genie_pzi[WhichInitialStateParticle] = -99.;
-    
-  }
-  
-  for (int WhichFinalStateParticle = 0; WhichFinalStateParticle < FinalStateParticles; WhichFinalStateParticle ++) {
-    
-    genie_pdgf[WhichFinalStateParticle] = -99;
-    genie_Ef[WhichFinalStateParticle] = -99.;
-    genie_pxf[WhichFinalStateParticle] = -99.;
-    genie_pyf[WhichFinalStateParticle] = -99.;
-    genie_pzf[WhichFinalStateParticle] = -99.;
-    genie_pf[WhichFinalStateParticle] = -99.;
-    genie_cthf[WhichFinalStateParticle] = -99.;
-    
-  }
-  
-
-
+      
+      
+      genie_neu = 11;
+      genie_fspl = 11;
+      genie_tgt = TargetPdgCode;
+      genie_Z = TargetZ;
+      genie_A = TargetA;
+      genie_hitnuc = -99.;
+      genie_hitqrk = -99.;
+      genie_resid = -99.;
+      genie_sea = false;
+      genie_qel = false;
+      genie_mec = false;
+      genie_res = false;
+      genie_dis = false;
+      genie_coh = false;
+      genie_dfr = false;
+      genie_imd = false;
+      genie_imdanh = false;
+      genie_singlek = false;
+      genie_nuel = false;
+      genie_em = true;
+      genie_CC = false;
+      genie_nc = false;
+      genie_charm = false;
+      genie_neut_code = -99;
+      genie_nuance_code = -99;
+      genie_wght = 1.;
+      genie_xs = -99;
+      genie_ys = -99;
+      genie_ts = -99;
+      genie_Q2s = -99;
+      genie_Ws = -99;
+      genie_Ev = en_beam;
+      genie_EvRF = -99.;
+      genie_pxv = 0.;
+      genie_pyv = 0.;
+      genie_pzv = sqrt(en_beam * en_beam - e_mass*e_mass); 
+      genie_En = -99.;
+      genie_pxn = -99.;
+      genie_pyn = -99.;
+      genie_pzn = -99.;
+      genie_nfkp = -99;
+      genie_nfkm = -99;
+      genie_nfk0 = -99;
+      genie_nfem = -99;
+      genie_nfother = -99;
+      genie_nip = -99;
+      genie_nin = -99;
+      genie_nipip = -99;
+      genie_nipim = -99;
+      genie_nipi0 = -99;
+      genie_nikp = -99;
+      genie_nikm = -99;
+      genie_nik0 = -99;
+      genie_niem = -99;
+      genie_niother = -99;
+      genie_ni = -99;
+      genie_calresp0 = -99;
+      genie_y = -99.;
+      genie_t = -99;
+      
+      int NEventsTotal = 0;
+      
+      for (int WhichInitialStateParticle = 0; WhichInitialStateParticle < InitialStateParticles; WhichInitialStateParticle ++) {
+	
+	genie_pdgi[WhichInitialStateParticle] = -99;
+	genie_resc[WhichInitialStateParticle] = -99;
+	genie_Ei[WhichInitialStateParticle] = -99.;
+	genie_pxi[WhichInitialStateParticle] = -99.;
+	genie_pyi[WhichInitialStateParticle] = -99.;
+	genie_pzi[WhichInitialStateParticle] = -99.;
+	
+      }
+      
+      for (int WhichFinalStateParticle = 0; WhichFinalStateParticle < FinalStateParticles; WhichFinalStateParticle ++) {
+	
+	genie_pdgf[WhichFinalStateParticle] = -99;
+	genie_Ef[WhichFinalStateParticle] = -99.;
+	genie_pxf[WhichFinalStateParticle] = -99.;
+	genie_pyf[WhichFinalStateParticle] = -99.;
+	genie_pzf[WhichFinalStateParticle] = -99.;
+	genie_pf[WhichFinalStateParticle] = -99.;
+	genie_cthf[WhichFinalStateParticle] = -99.;
+	
+      }
+      
+      
+      
       
       auto particles = c12.getDetParticles();
       
@@ -420,44 +419,57 @@ TTree* mytree;
       nonelectron = 0;
       nonproton = 0;
       nonpion = 0;
-      
+      nprot = 0;
+      npip = 0;
+      npim = 0;      
+
+
       auto electrons=c12.getByID(11);
       auto protons=c12.getByID(2212);
       auto pips=c12.getByID(211);
       auto pims=c12.getByID(-211);
-
+      
       //copy-pasted from CTOF, can be made more efficient, all we're after is the particle 4-vectors      
-//       for(auto& p : particles){
-	
-//         // Looking at negative particles
-//         if(p->par()->getCharge() < 0){
-// 	  negative++;
-//           // negative particles not electron are set to pi^-
-//           if(p->par()->getPid() != 11){
-//             nonelectron++;
-//             pim.SetXYZM(p->par()->getPx(),p->par()->getPy(),p->par()->getPz(),db->GetParticle(-211)->Mass());
-//           }
-//         }
-//         // Looking at positive particles
-//         else if(p->par()->getCharge() > 0){
-// 	  positive++;
-// 	  //positive particles not proton are set to pi+
-//           if(p->par()->getPid() != 2212){
-//             nonproton++;
-//             pip.SetXYZM(p->par()->getPx(),p->par()->getPy(),p->par()->getPz(),db->GetParticle(211)->Mass());
-//           }
-// 	  //positive particles not pion are set to proton
-//           if(p->par()->getPid() != 211){
-//             nonpion++;
-//             pr.SetXYZM(p->par()->getPx(),p->par()->getPy(),p->par()->getPz(),db->GetParticle(2212)->Mass());
-//           }
-// 	}
-//       }
-           
-//       //if(nonpion == 1 && electrons.size() == 1 && pims.size() == 1 && pips.size() == 1){
+      //       for(auto& p : particles){
+      
+      //         // Looking at negative particles
+      //         if(p->par()->getCharge() < 0){
+      // 	  negative++;
+      //           // negative particles not electron are set to pi^-
+      //           if(p->par()->getPid() != 11){
+      //             nonelectron++;
+      //             pim.SetXYZM(p->par()->getPx(),p->par()->getPy(),p->par()->getPz(),db->GetParticle(-211)->Mass());
+      //           }
+      //         }
+      //         // Looking at positive particles
+      //         else if(p->par()->getCharge() > 0){
+      // 	  positive++;
+      // 	  //positive particles not proton are set to pi+
+      //           if(p->par()->getPid() != 2212){
+      //             nonproton++;
+      //             pip.SetXYZM(p->par()->getPx(),p->par()->getPy(),p->par()->getPz(),db->GetParticle(211)->Mass());
+      //           }
+      // 	  //positive particles not pion are set to proton
+      //           if(p->par()->getPid() != 211){
+      //             nonpion++;
+      //             pr.SetXYZM(p->par()->getPx(),p->par()->getPy(),p->par()->getPz(),db->GetParticle(2212)->Mass());
+      //           }
+      // 	}
+      //       }
+      
+      //       //if(nonpion == 1 && electrons.size() == 1 && pims.size() == 1 && pips.size() == 1){
+      
+      //----------------------------
+      //-----Electron Selection-----
+      //----------------------------
       if(electrons.size()<1) continue; //skip if no electron
-
+      
       SetLorentzVector(el,electrons[0]);
+      
+      //----------------------
+      //we can add some basic electron selection (vertex cuts, etc) as we go
+      
+      //----------------------
 
        //some kinematic quantities from the scattered electron (beam energy must be appropriately defined)
        double nu = -(el-beam).E();
@@ -478,24 +490,117 @@ TTree* mytree;
        genie_vtxx = 0;
        genie_vtxy = 0;
        genie_vtxz = 0;
+
+
+      //-----------------------------
+      //--End of Electron Selection--
+      //-----------------------------
        
+       //---------------------------------------------
+       //---------START OF HADRON SELECTION-----------
+       //---------------------------------------------
+       loc_proton_v4.clear();
+       //loc_pion_v4.clear();
+       loc_pipl_v4.clear();
+       loc_pimi_v4.clear();
+       
+       int IndexInFinalStateParticleArray = 0;
+       
+       for(auto& p : particles){
+	 
+	 if(p->par()->getCharge() > 0 ){
+	   positive++;
+	   
+	   if(p->par()->getPid()==2212){
+	     //pr.SetXYZM(p->par()->getPx(),p->par()->getPy(),p->par()->getPz(),db->GetParticle(2212)->Mass());
+	     SetLorentzVector(pr,protons[nprot]);
 
-//       //hadrons
-//       //SetLorentzVector(pr,protons[0]);
-//       //SetLorentzVector(pip,pips[0]);
-//       //SetLorentzVector(pim,pims[0]);
+ 	     genie_pdgf[IndexInFinalStateParticleArray] = 2212;
+ 	     genie_Ef[IndexInFinalStateParticleArray] = pr.E();
+ 	     genie_pxf[IndexInFinalStateParticleArray] = pr.Px();
+ 	     genie_pyf[IndexInFinalStateParticleArray] = pr.Py();
+ 	     genie_pzf[IndexInFinalStateParticleArray] = pr.Pz();
+ 	     genie_pf[IndexInFinalStateParticleArray] = pr.Rho();
+ 	     genie_cthf[IndexInFinalStateParticleArray] = pr.CosTheta();
+	     
+ 	     //double CorrectedProtonMomentum = ProtonMomCorrection_He3_4Cell(ftarget,V4_uncorrprot,p_vert_corr);
+ 	     //V4_uncorrprot.SetRho(CorrectedProtonMomentum);
+ 	     //double CorrectedProtonE = sqrt(CorrectedProtonMomentum*CorrectedProtonMomentum + m_prot*m_prot);
+ 	     //V4_uncorrprot.SetE(CorrectedProtonE);
+	     
+ 	     genie_pdgf[IndexInFinalStateParticleArray+shift] = 2212;
+ 	     genie_Ef[IndexInFinalStateParticleArray+shift] = pr.E();
+ 	     genie_pxf[IndexInFinalStateParticleArray+shift] = pr.Px();
+ 	     genie_pyf[IndexInFinalStateParticleArray+shift] = pr.Py();
+ 	     genie_pzf[IndexInFinalStateParticleArray+shift] = pr.Pz();
+ 	     genie_pf[IndexInFinalStateParticleArray+shift] = pr.Rho();
+ 	     genie_cthf[IndexInFinalStateParticleArray+shift] = pr.CosTheta();
+ 	     IndexInFinalStateParticleArray++;
+	     
+
+	     nprot++;
+	     loc_proton_v4.push_back(pr);
+	   }
+	   
+ 	   if(p->par()->getPid()==211){
+ 	     SetLorentzVector(pip,pips[npip]);
+
+ 	     double PiPlusP = pip.Vect().Mag();
+ 	     double PiPlusE = TMath::Sqrt(PiPlusP*PiPlusP + m_pipl * m_pipl);
+	     
+ 	     genie_pdgf[IndexInFinalStateParticleArray] = 211;
+ 	     genie_Ef[IndexInFinalStateParticleArray] = PiPlusE;
+ 	     genie_pxf[IndexInFinalStateParticleArray] = pip.Vect().X();
+ 	     genie_pyf[IndexInFinalStateParticleArray] = pip.Vect().Y();
+ 	     genie_pzf[IndexInFinalStateParticleArray] = pip.Vect().Z();
+ 	     genie_pf[IndexInFinalStateParticleArray] = PiPlusP;
+ 	     genie_cthf[IndexInFinalStateParticleArray] = pip.Vect().CosTheta();
+ 	     IndexInFinalStateParticleArray++;
+	     
+ 	     npip++;
+ 	     loc_pipl_v4.push_back(pip);
+ 	   }
+	 }
+	 
+ 	 else if(p->par()->getCharge() < 0 ){
+ 	   negative++;
+	   
+ 	   if(p->par()->getPid()==-211){
+ 	     SetLorentzVector(pim,pims[npim]);
+
+ 	     double PiMinusP = pim.Vect().Mag();
+ 	     double PiMinusE = TMath::Sqrt(PiMinusP*PiMinusP + m_pimi * m_pimi);
+	     
+ 	     genie_pdgf[IndexInFinalStateParticleArray] = -211;
+ 	     genie_Ef[IndexInFinalStateParticleArray] = PiMinusE;
+ 	     genie_pxf[IndexInFinalStateParticleArray] = pim.Vect().X();
+ 	     genie_pyf[IndexInFinalStateParticleArray] = pim.Vect().Y();
+ 	     genie_pzf[IndexInFinalStateParticleArray] = pim.Vect().Z();
+ 	     genie_pf[IndexInFinalStateParticleArray] = PiMinusP;
+ 	     genie_cthf[IndexInFinalStateParticleArray] = pim.Vect().CosTheta();
+ 	     IndexInFinalStateParticleArray++;
 
 
+ 	     npim++;
+ 	     loc_pimi_v4.push_back(pim);
+ 	   }
+	 }
+	 
+	 
+	 //what about neutrals???
+	 
+       }
+
+
+    //---------------------------------------------
+    //----------END OF HADRON SELECTION------------
+    //---------------------------------------------
        mytree->Fill();
 
       }
       
     //}
     
-
-
-
-
 
 
 //       //v_Runno.push_back(to_string(runno)); // Converting runno integer to a string
