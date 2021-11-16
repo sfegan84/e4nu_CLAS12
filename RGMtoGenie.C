@@ -101,7 +101,11 @@ void RGMtoGenie(TString inFileName){
   
   
   int TargetPdgCode, TargetZ, TargetA;
-  
+
+  //RGA tests, hydrogen target  
+  TargetZ = 1;
+  TargetA = 1;
+
   //   if (ftarget=="3He") { TargetPdgCode = 1000020030; TargetZ = 2; TargetA = 3; }
   //   if (ftarget=="4He") { TargetPdgCode = 1000020040; TargetZ = 2; TargetA = 4; }
   //   if (ftarget=="C12") { TargetPdgCode = 1000060120; TargetZ = 6; TargetA = 12; }
@@ -595,6 +599,18 @@ void RGMtoGenie(TString inFileName){
     //---------------------------------------------
     //----------END OF HADRON SELECTION------------
     //---------------------------------------------
+
+       genie_nfp = nprot;
+       genie_nfn = 0;
+       genie_nfpip = npip;
+       genie_nfpim = npim;
+       //genie_nfpi0 = ec_num_n;
+       genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfpi0;
+       
+       //genie_iev = NEventsTotal;
+       //NEventsTotal++;
+
+
        mytree->Fill();
 
       }
