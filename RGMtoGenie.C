@@ -73,16 +73,20 @@ void RGMtoGenie(TString inFileName){
   TLorentzVector pr(0,0,0,db->GetParticle(2212)->Mass()); // proton Px,Py,Pz,E
   TLorentzVector pip(0,0,0,db->GetParticle(211)->Mass()); // pi^+ Px,Py,Pz,E
   TLorentzVector pim(0,0,0,db->GetParticle(-211)->Mass()); // pi^- Px,Py,Pz,E
-  //pi0's, kaons, etc?
+  TLorentzVector kpl(0,0,0,db->GetParticle(321)->Mass()); //k^+ Px,Py,Pz,E
+  TLorentzVector kmi(0,0,0,db->GetParticle(-321)->Mass()); //k^- Px,Py,Pz,E
+  //pi0's, others?
 
   std::vector<TLorentzVector> loc_proton_v4;
   //std::vector<TLorentzVector> loc_pion_v4;
   std::vector<TLorentzVector> loc_pipl_v4;
   std::vector<TLorentzVector> loc_pimi_v4;
+  std::vector<TLorentzVector> loc_kpl_v4;
+  std::vector<TLorentzVector> loc_kmi_v4;
   
   
   
-  Int_t negative, positive, nonelectron, nonproton, nonpion, npip, npim, nprot;
+  Int_t negative, positive, nonelectron, nonproton, nonpion, npip, npim, nprot, nkpl, nkmi;
   
   
   // Retrieving list of files
@@ -426,12 +430,16 @@ void RGMtoGenie(TString inFileName){
       nprot = 0;
       npip = 0;
       npim = 0;      
+      nkpl = 0;
+      nkmi = 0;      
 
 
       auto electrons=c12.getByID(11);
       auto protons=c12.getByID(2212);
       auto pips=c12.getByID(211);
       auto pims=c12.getByID(-211);
+      auto kpls=c12.getByID(321);
+      auto kmis=c12.getByID(-321);
       
       //copy-pasted from CTOF, can be made more efficient, all we're after is the particle 4-vectors      
       //       for(auto& p : particles){
@@ -564,6 +572,23 @@ void RGMtoGenie(TString inFileName){
  	     npip++;
  	     loc_pipl_v4.push_back(pip);
  	   }
+
+	   if(p->par()->getPid()==321){
+	     SetLorentzVector(kpl,kpls[nkpl]);
+
+ 	     genie_pdgf[IndexInFinalStateParticleArray] = 321;
+ 	     genie_Ef[IndexInFinalStateParticleArray] = kpl.E();
+ 	     genie_pxf[IndexInFinalStateParticleArray] = kpl.Px();
+ 	     genie_pyf[IndexInFinalStateParticleArray] = kpl.Py();
+ 	     genie_pzf[IndexInFinalStateParticleArray] = kpl.Pz();
+ 	     genie_pf[IndexInFinalStateParticleArray] = kpl.Rho();
+ 	     genie_cthf[IndexInFinalStateParticleArray] = kpl.CosTheta();
+ 	     IndexInFinalStateParticleArray++;
+	     
+
+	     nkpl++;
+	     loc_kpl_v4.push_back(kpl);
+	   }
 	 }
 	 
  	 else if(p->par()->getCharge() < 0 ){
@@ -588,6 +613,23 @@ void RGMtoGenie(TString inFileName){
  	     npim++;
  	     loc_pimi_v4.push_back(pim);
  	   }
+
+	   if(p->par()->getPid()==-321){
+	     SetLorentzVector(kmi,kmis[nkmi]);
+
+ 	     genie_pdgf[IndexInFinalStateParticleArray] = -321;
+ 	     genie_Ef[IndexInFinalStateParticleArray] = kmi.E();
+ 	     genie_pxf[IndexInFinalStateParticleArray] = kmi.Px();
+ 	     genie_pyf[IndexInFinalStateParticleArray] = kmi.Py();
+ 	     genie_pzf[IndexInFinalStateParticleArray] = kmi.Pz();
+ 	     genie_pf[IndexInFinalStateParticleArray] = kmi.Rho();
+ 	     genie_cthf[IndexInFinalStateParticleArray] = kmi.CosTheta();
+ 	     IndexInFinalStateParticleArray++;
+	     
+
+	     nkmi++;
+	     loc_kmi_v4.push_back(kpl);
+	   }
 	 }
 	 
 	 
@@ -604,8 +646,15 @@ void RGMtoGenie(TString inFileName){
        genie_nfn = 0;
        genie_nfpip = npip;
        genie_nfpim = npim;
+
+       genie_nfkp = nkpl;
+       genie_nfkm = nkmi;
+
+       genie_nfpi0 = 0;
        //genie_nfpi0 = ec_num_n;
-       genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfpi0;
+
+       //genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfpi0;
+       genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfkp + genie_nfkm + genie_nfpi0;
        
        //genie_iev = NEventsTotal;
        //NEventsTotal++;
