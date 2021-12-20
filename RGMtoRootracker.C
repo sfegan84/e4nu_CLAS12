@@ -118,7 +118,25 @@ void RGMtoRootracker(TString inFileName){
 
   //--------
   //Tree variables declared here
-
+  int        EvtNum;
+  TBits      EvtFlags;
+  TObjString EvtCode;
+  double     EvtXSec;
+  double     EvtDXSec;
+  double     EvtWght;
+  double     EvtProb;
+  double     EvtVtx[4];
+  int        StdHepN;
+  int        StdHepPdg;
+  int        StdHepStat;
+  int        StdHepRescat;
+  double     StdHepX4[kNPmax][4];
+  double     StdHepP4[kNPmax][4];
+  double     StdHepPolz[kNPmax][3];
+  int        StdHepFd[kNPmax];
+  int        StdHepLd[kNPmax];
+  int        StdHepFm[kNPmax];
+  int        StdHepLm[kNPmax];
 
   //--------
 
