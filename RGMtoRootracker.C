@@ -22,6 +22,7 @@
 #include <TCanvas.h>
 #include <TPaletteAxis.h>
 #include <TBenchmark.h>
+#include <TBits.h>
 #include "clas12reader.h"
 #include <stdlib.h>
 #include "Riostream.h"
@@ -118,25 +119,26 @@ void RGMtoRootracker(TString inFileName){
 
   //--------
   //Tree variables declared here
-  int        EvtNum;
-  TBits      EvtFlags;
-  TObjString EvtCode;
-  double     EvtXSec;
-  double     EvtDXSec;
-  double     EvtWght;
-  double     EvtProb;
-  double     EvtVtx[4];
-  int        StdHepN;
-  int        StdHepPdg;
-  int        StdHepStat;
-  int        StdHepRescat;
-  double     StdHepX4[kNPmax][4];
-  double     StdHepP4[kNPmax][4];
-  double     StdHepPolz[kNPmax][3];
-  int        StdHepFd[kNPmax];
-  int        StdHepLd[kNPmax];
-  int        StdHepFm[kNPmax];
-  int        StdHepLm[kNPmax];
+  int        rootrack_EvtNum;
+  TBits      rootrack_EvtFlags;
+  TObjString rootrack_EvtCode;
+  double     rootrack_EvtXSec;
+  double     rootrack_EvtDXSec;
+  double     rootrack_EvtWght;
+  double     rootrack_EvtProb;
+  double     rootrack_EvtVtx[4];
+  int        rootrack_StdHepN;
+  int        rootrack_StdHepPdg;
+  int        rootrack_StdHepStatus;
+  int        rootrack_StdHepRescat;
+  const int kNPmax = 120; //maximum number of final state particles that can be stored in this tree.  Should be more than adequate for CLAS12 multiplicity
+  double     rootrack_StdHepX4[kNPmax][4];
+  double     rootrack_StdHepP4[kNPmax][4];
+  double     rootrack_StdHepPolz[kNPmax][3];
+  int        rootrack_StdHepFd[kNPmax];
+  int        rootrack_StdHepLd[kNPmax];
+  int        rootrack_StdHepFm[kNPmax];
+  int        rootrack_StdHepLm[kNPmax];
 
   //--------
 
@@ -145,7 +147,25 @@ void RGMtoRootracker(TString inFileName){
   mytree = new TTree("rootracker","rootracker");
 
   //Branches declared here
-  //mytree->Branch("iev", &genie_iev, "iev/I");  //example from RGMtoGenie
+  mytree->Branch("EvtNum", &rootrack_EvtNum, "EvtNum/I");
+  mytree->Branch("EvtFlags", &rootrack_EvtFlags);
+  mytree->Branch("EvtCode", &rootrack_EvtCode);
+  mytree->Branch("EvtXSec", &rootrack_EvtXSec,"EvtXSec/D");
+  mytree->Branch("EvtDXSec", &rootrack_EvtDXSec, "EvtDXSec/D");
+  mytree->Branch("EvtWght", &rootrack_EvtWght, "EvtWght/D");
+  mytree->Branch("EvtProb", &rootrack_EvtProb, "EvtProb/D");
+  mytree->Branch("EvtVtx", &rootrack_EvtVtx, "EvtVtx[4]/D");
+  mytree->Branch("StdHepN", &rootrack_StdHepN, "StdHepN/I");
+  mytree->Branch("StdHepPdg", &rootrack_StdHepPdg, "StdHepPdg/I");
+  mytree->Branch("StdHepStatus", &rootrack_StdHepStatus, "StdHepStatus/I");
+  mytree->Branch("StdHepRescat", &rootrack_StdHepRescat, "StdHepRescat/I");
+  mytree->Branch("StdHepX4", &rootrack_StdHepX4, "StdHepX4[kNPmax][4]/D");
+  mytree->Branch("StdHepP4", &rootrack_StdHepP4, "StdHepP4[kNPmax][4]/D");
+  mytree->Branch("StdHepPolz", &rootrack_StdHepPolz, "StdHepPolz[kNPmax][3]/D");
+  mytree->Branch("StdHepFd", &rootrack_StdHepFd, "StdHepFd[kNPmax]/I");
+  mytree->Branch("StdHepLd", &rootrack_StdHepLd, "StdHepLd[kNPmax]/I");
+  mytree->Branch("StdHepFm", &rootrack_StdHepFm, "StdHepFm[kNPmax]/I");
+  mytree->Branch("StdHepLm", &rootrack_StdHepLm, "StdHepLm[kNPmax]/I");
 
   //--------
 
@@ -164,11 +184,46 @@ void RGMtoRootracker(TString inFileName){
       
       //Initialise variables
 
+      //rootrack_EvtFlags;
+      //rootrack_EvtCode;
+      rootrack_EvtXSec = -999.0;
+      rootrack_EvtDXSec = -999.0;
+      rootrack_EvtWght = 0.0;
+      rootrack_EvtProb = -999.0;
+      rootrack_EvtVtx[0] = -999.0;
+      rootrack_EvtVtx[1] = -999.0;
+      rootrack_EvtVtx[2] = -999.0;
+      rootrack_EvtVtx[3] = -999.0;
+      rootrack_StdHepN = -99;
+      rootrack_StdHepPdg = -9999;
+      rootrack_StdHepStatus = -9999;
+      rootrack_StdHepRescat = -9999;
       
-      int NEventsTotal = 0;
-      
+      for (int WhichFinalStateParticle = 0; WhichFinalStateParticle < kNPmax; WhichFinalStateParticle ++) {
+	
+	rootrack_StdHepX4[WhichFinalStateParticle][0] = -99;
+	rootrack_StdHepX4[WhichFinalStateParticle][1] = -99;
+	rootrack_StdHepX4[WhichFinalStateParticle][2] = -99;
+	rootrack_StdHepX4[WhichFinalStateParticle][3] = -99;
 
-      
+	rootrack_StdHepP4[WhichFinalStateParticle][0] = -99;
+	rootrack_StdHepP4[WhichFinalStateParticle][1] = -99;
+	rootrack_StdHepP4[WhichFinalStateParticle][2] = -99;
+	rootrack_StdHepP4[WhichFinalStateParticle][3] = -99;
+
+	rootrack_StdHepPolz[WhichFinalStateParticle][0] = -99;
+	rootrack_StdHepPolz[WhichFinalStateParticle][1] = -99;
+	rootrack_StdHepPolz[WhichFinalStateParticle][2] = -99;
+
+	rootrack_StdHepFd[WhichFinalStateParticle] = -99;
+	rootrack_StdHepLd[WhichFinalStateParticle] = -99;
+	rootrack_StdHepFm[WhichFinalStateParticle] = -99;
+	rootrack_StdHepLm[WhichFinalStateParticle] = -99;
+	
+      }
+
+
+      int NEventsTotal = 0;
       
       
       
@@ -379,8 +434,8 @@ void RGMtoRootracker(TString inFileName){
 //        //genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfpi0;
 //        genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfkp + genie_nfkm + genie_nfpi0;
        
-//        //genie_iev = NEventsTotal;
-//        //NEventsTotal++;
+        rootrack_EvtNum = NEventsTotal;
+        NEventsTotal++;
 
 
        mytree->Fill();
@@ -403,7 +458,7 @@ void RGMtoRootracker(TString inFileName){
 }
 
 
-//Function wrapper for hard coded filename
+//Function wrapper for hard coded filename - this is unnecessary and should be removed in favour of the function call with filename arguments
 void RGMtoRootracker(){
 
   // Data files to process
