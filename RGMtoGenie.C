@@ -47,7 +47,8 @@ void SetLorentzVector(TLorentzVector &p4,clas12::region_part_ptr rp){
 }
 
 
-void RGMtoGenie(TString inFileName){
+//void RGMtoGenie(TString inFileName){
+void RGMtoGenie(TString inFileName, TString outFileName, const std::string databaseF){
 
   TString inputFile = inFileName;
 
@@ -60,12 +61,17 @@ void RGMtoGenie(TString inFileName){
 
   auto db=TDatabasePDG::Instance();
 
-  double en_beam = 10.6;  //nominal RGA value, RGM will run at 1, 2, 4 and 6 GeV
+  //open comunications with RCDB DBfile must be name of prepared database root file
+  const std::string DBfile = databaseF;
+  clas12databases::SetRCDBRootConnection(DBfile);
+  
+  double en_beam = 6.0;  //This needs to come from RCDB
   //en_beam["1161"]=1.161;
   //en_beam["2261"]=2.261;
   //en_beam["4461"]=4.461;
   //en_beam["6661"]=6.661;
   //try and figure out how to read these in from epics variables
+  Double_t beam_E;
 
   TLorentzVector beam(0,0,en_beam,en_beam); // beam Px,Py,Pz,E  //CURRENTLY SET TO RGA NOMINAL VALUES
   TLorentzVector target(0,0,0,db->GetParticle(2212)->Mass()); // target Px,Py,Pz,E
@@ -96,7 +102,8 @@ void RGMtoGenie(TString inFileName){
   // Output file location and name
   
   
-  TString outFileName( inFileName(0,inFileName.Length()-5) + "_genie_filtered.root"); //trim '.hipo' and add '.root' for output file name
+  ////TString outFileName( inFileName(0,inFileName.Length()-5) + "_genie_filtered.root"); //trim '.hipo' and add '.root' for output file name
+  //TString outFileName( "ca40_qe_genie_test1_torus-1.0_sol-1.0_genie_filtered.root"); //test output
   
   
   
@@ -106,9 +113,9 @@ void RGMtoGenie(TString inFileName){
   
   int TargetPdgCode, TargetZ, TargetA;
 
-  //RGA tests, hydrogen target  
-  TargetZ = 1;
-  TargetA = 1;
+  //RGM tests, ca-40 target  
+  TargetZ = 20;
+  TargetA = 20;
 
   //   if (ftarget=="3He") { TargetPdgCode = 1000020030; TargetZ = 2; TargetA = 3; }
   //   if (ftarget=="4He") { TargetPdgCode = 1000020040; TargetZ = 2; TargetA = 4; }
@@ -325,13 +332,35 @@ void RGMtoGenie(TString inFileName){
     
     //create the event reader
     clas12reader c12(files->At(i)->GetTitle());
+
+ //Creating a chain for the data from different filesc12->queryRcdb();
+   clas12root::HipoChain chain;
+   chain.Add(inFileName);
+   chain.SetReaderTags({0});  //create clas12reader with just tag 0 events
+   auto config_c12=chain.GetC12Reader();
+
+   //dont talk to QADB
+    chain.db()->turnOffQADB();
+
+    //RCDB data is for the current run I think
+    auto& rcdbData= config_c12->rcdb()->current();
     
     //Binno++; // Count the number of files, therefore the number of x bins
     
-    c12.setEntries(1E5);
+    c12.setEntries(2E5);
     while(c12.next()==true){
       
+       //GeV it up
+      beam_E = rcdbData.beam_energy*0.001;
+      //beam_E = rcdbData.beam_energy;
       
+      beam.SetXYZM(0, 0, beam_E, 0.000511);
+
+      en_beam = beam_E;
+
+      //cout << "beam energy " << beam_E << endl;
+
+     
       genie_neu = 11;
       genie_fspl = 11;
       genie_tgt = TargetPdgCode;
@@ -656,8 +685,8 @@ void RGMtoGenie(TString inFileName){
        //genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfpi0;
        genie_nf = genie_nfp + genie_nfn + genie_nfpip + genie_nfpim + genie_nfkp + genie_nfkm + genie_nfpi0;
        
-       //genie_iev = NEventsTotal;
-       //NEventsTotal++;
+       genie_iev = NEventsTotal;
+       NEventsTotal++;
 
 
        mytree->Fill();
@@ -686,10 +715,16 @@ void RGMtoGenie(){
   // Data files to process
   //TString inFile("/cache/clas12/rg-a/production/recon/fall2018/torus-1/pass1/v0/dst/train/skim4/skim4_005*.hipo");
   //TString inFile("/volatile/clas12/rg-a/production/recon/fall2018/torus-1/pass1/v0/dst/train/dst/train/skim4/*.hipo");
-  TString inFile("/home/stuart/CLAS/Data/skim4_00503*.hipo");
+  TString inFile("/cache/clas12/rg-a/production/recon/fall2018/torus-1/pass1/v0/dst/train/skim4/skim4_005051.hipo");
   // TString inputFile2("/volatile/clas12/rg-b/production/recon/spring2019/torus-1/pass1/v0/dst/train/inc/*.hipo");
 
-  RGMtoGenie(inFile); //call the analysis function with this filename 
+  TString outFile("/home/sfegan/CTOF_rcdbTest5051.root");
+  
+  const std::string databaseF("/home/sfegan/rcdb.root");
+  
+  cout << "calling function" <<endl;
+  
+  RGMtoGenie(inFile, outFile, databaseF); //call the analysis function with this filename 
 
 }
 
